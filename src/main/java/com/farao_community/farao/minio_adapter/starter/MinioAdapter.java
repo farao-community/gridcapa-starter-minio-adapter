@@ -7,17 +7,13 @@
 package com.farao_community.farao.minio_adapter.starter;
 
 import io.minio.*;
-import io.minio.errors.*;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -117,6 +113,23 @@ public class MinioAdapter {
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(String.format("Exception occurred while listing files in directory: %s, from minio server", prefix), e);
+        }
+    }
+
+    public boolean fileExists(String filePath) {
+        String defaultBucket = properties.getBucket();
+        String defaultBasePath = properties.getBasePath();
+        String pathDestination = defaultBasePath + "/" + filePath;
+        try {
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(pathDestination)
+                            .build()
+            );
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 

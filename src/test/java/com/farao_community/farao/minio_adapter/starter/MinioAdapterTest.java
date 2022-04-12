@@ -196,6 +196,46 @@ class MinioAdapterTest {
                 ));
     }
 
+    @Test
+    void checkFileExistsReturnTrueWhenFileExists() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "existingFile";
+
+        Mockito.when(minioClient.statObject(Mockito.argThat(assertStatObjectArgs(filePath))))
+                .thenReturn(Mockito.mock(ObjectStat.class));
+
+        assertTrue(minioAdapter.fileExists(filePath));
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .statObject(Mockito.argThat(
+                        assertStatObjectArgs(filePath)
+                ));
+    }
+
+    @Test
+    void checkFileExistsReturnFalseWhenFileDoesNotExists() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "nonExistingFile";
+
+        Mockito.when(minioClient.statObject(Mockito.argThat(assertStatObjectArgs(filePath))))
+                        .thenThrow(new RuntimeException());
+
+        assertFalse(minioAdapter.fileExists(filePath));
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .statObject(Mockito.argThat(
+                        assertStatObjectArgs(filePath)
+                ));
+    }
+
     private Iterable<Result<Item>> getFakeObjectsList(List<String> directoryContent) {
         return directoryContent.stream()
                 .map(this::generateFakeItemForContent)
@@ -301,6 +341,11 @@ class MinioAdapterTest {
 
     private ArgumentMatcher<MakeBucketArgs> assertMakeBucketArgs() {
         return makeBucketArgs -> makeBucketArgs.bucket().equals(BUCKET_NAME);
+    }
+
+    private ArgumentMatcher<StatObjectArgs> assertStatObjectArgs(String filePath) {
+        return statObjectArgs -> statObjectArgs.bucket().equals(BUCKET_NAME) &&
+                statObjectArgs.object().equals(BASE_PATH + "/" + filePath);
     }
 
     private ArgumentMatcher<PutObjectArgs> assertPutObjectArgs(
