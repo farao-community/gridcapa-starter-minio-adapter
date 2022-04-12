@@ -236,6 +236,48 @@ class MinioAdapterTest {
                 ));
     }
 
+    @Test
+    void checkThatPresignedUrlIsGeneratedCorrectlyWithGivenExpiry() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "file";
+        int expiryInDays = 2;
+
+        Mockito.when(minioClient.getPresignedObjectUrl(Mockito.argThat(assertGetPresignedObjectUrlArgs(filePath, expiryInDays))))
+                .thenReturn("url");
+
+        assertEquals("url", minioAdapter.generatePreSignedUrl(filePath, expiryInDays));
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .getPresignedObjectUrl(Mockito.argThat(
+                        assertGetPresignedObjectUrlArgs(filePath, expiryInDays)
+                ));
+    }
+
+
+    @Test
+    void checkThatPresignedUrlIsGeneratedCorrectlyWithDefaultExpiry() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "file";
+
+        Mockito.when(minioClient.getPresignedObjectUrl(Mockito.argThat(assertGetPresignedObjectUrlArgs(filePath))))
+                .thenReturn("url");
+
+        assertEquals("url", minioAdapter.generatePreSignedUrl(filePath));
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .getPresignedObjectUrl(Mockito.argThat(
+                        assertGetPresignedObjectUrlArgs(filePath)
+                ));
+    }
+
     private Iterable<Result<Item>> getFakeObjectsList(List<String> directoryContent) {
         return directoryContent.stream()
                 .map(this::generateFakeItemForContent)
@@ -346,6 +388,18 @@ class MinioAdapterTest {
     private ArgumentMatcher<StatObjectArgs> assertStatObjectArgs(String filePath) {
         return statObjectArgs -> statObjectArgs.bucket().equals(BUCKET_NAME) &&
                 statObjectArgs.object().equals(BASE_PATH + "/" + filePath);
+    }
+
+    private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath) {
+        return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
+                getPresignedObjectUrlArgs.object().equals(BASE_PATH + "/" + filePath) &&
+                getPresignedObjectUrlArgs.expiry() == DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS;
+    }
+
+    private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath, int expiry) {
+        return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
+                getPresignedObjectUrlArgs.object().equals(BASE_PATH + "/" + filePath) &&
+                getPresignedObjectUrlArgs.expiry() == expiry;
     }
 
     private ArgumentMatcher<PutObjectArgs> assertPutObjectArgs(

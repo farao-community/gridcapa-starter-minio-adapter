@@ -7,6 +7,7 @@
 package com.farao_community.farao.minio_adapter.starter;
 
 import io.minio.*;
+import io.minio.http.Method;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,29 @@ public class MinioAdapter {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    public String generatePreSignedUrl(String filePath) {
+        return generatePreSignedUrl(filePath, MinioAdapterConstants.DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS);
+    }
+
+    public String generatePreSignedUrl(String filePath, int expiryInDays) {
+        String defaultBucket = properties.getBucket();
+        String defaultBasePath = properties.getBasePath();
+        String pathDestination = defaultBasePath + "/" + filePath;
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(pathDestination)
+                            .expiry(expiryInDays)
+                            .method(Method.GET)
+                            .build()
+            );
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(String.format("Exception occurred while getting pre-signed URL for file: %s, from minio server", filePath), e);
         }
     }
 
