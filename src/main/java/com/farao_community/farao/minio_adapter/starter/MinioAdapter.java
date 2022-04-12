@@ -8,6 +8,8 @@ package com.farao_community.farao.minio_adapter.starter;
 
 import io.minio.*;
 import io.minio.http.Method;
+import io.minio.messages.DeleteError;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -155,6 +158,37 @@ public class MinioAdapter {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(String.format("Exception occurred while getting pre-signed URL for file: %s, from minio server", filePath), e);
         }
+    }
+
+    public void deleteFile(String filePath) {
+        deleteFiles(Collections.singletonList(filePath));
+    }
+
+    public void deleteFiles(List<String> filePathList) {
+        String defaultBucket = properties.getBucket();
+        List<DeleteObject> deleteObjects = buildDeleteObjects(filePathList);
+        try {
+            var results = minioClient.removeObjects(
+                    RemoveObjectsArgs.builder()
+                            .bucket(defaultBucket)
+                            .objects(deleteObjects)
+                            .build()
+            );
+            for (Result<DeleteError> deleteErrorResult: results) {
+                DeleteError error = deleteErrorResult.get();
+                LOGGER.error("Could not delete object " + error.objectName());
+            }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException("Exception occurred while deleting files from minio server", e);
+        }
+    }
+
+    private List<DeleteObject> buildDeleteObjects(List<String> filePathList) {
+        String defaultBasePath = properties.getBasePath();
+        return filePathList.stream()
+                .map(filePath -> new DeleteObject(defaultBasePath + "/" + filePath))
+                .collect(Collectors.toList());
     }
 
     private boolean filterDirectoryFiles(Result<Item> itemResult) {

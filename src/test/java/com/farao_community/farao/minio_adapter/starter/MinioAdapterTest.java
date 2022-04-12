@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -257,7 +258,6 @@ class MinioAdapterTest {
                 ));
     }
 
-
     @Test
     void checkThatPresignedUrlIsGeneratedCorrectlyWithDefaultExpiry() throws Exception {
         MinioClient minioClient = Mockito.mock(MinioClient.class);
@@ -275,6 +275,40 @@ class MinioAdapterTest {
         Mockito.verify(minioClient, Mockito.times(1))
                 .getPresignedObjectUrl(Mockito.argThat(
                         assertGetPresignedObjectUrlArgs(filePath)
+                ));
+    }
+
+    @Test
+    void checkThatMinioAdapterDeleteFileCorrectly() {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "file";
+
+        minioAdapter.deleteFile(filePath);
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .removeObjects(Mockito.argThat(
+                        assertRemoveObjectsArgs()
+                ));
+    }
+
+    @Test
+    void checkThatMinioAdapterDeleteMultipleFilesCorrectly() {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        List<String> filePathList = Arrays.asList("file1", "file2", "file3");
+
+        minioAdapter.deleteFiles(filePathList);
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .removeObjects(Mockito.argThat(
+                        assertRemoveObjectsArgs()
                 ));
     }
 
@@ -388,6 +422,10 @@ class MinioAdapterTest {
     private ArgumentMatcher<StatObjectArgs> assertStatObjectArgs(String filePath) {
         return statObjectArgs -> statObjectArgs.bucket().equals(BUCKET_NAME) &&
                 statObjectArgs.object().equals(BASE_PATH + "/" + filePath);
+    }
+
+    private ArgumentMatcher<RemoveObjectsArgs> assertRemoveObjectsArgs() {
+        return removeObjectsArgs -> removeObjectsArgs.bucket().equals(BUCKET_NAME);
     }
 
     private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath) {

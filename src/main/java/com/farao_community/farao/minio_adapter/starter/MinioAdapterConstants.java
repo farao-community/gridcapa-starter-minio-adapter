@@ -29,11 +29,11 @@ public final class MinioAdapterConstants {
      *
      * key -> key.toLowerCase(Locale.US).startsWith("x-amz-meta-") ? "" : "x-amz-meta-") + key
      */
-    public static final String DEFAULT_GRIDCAPA_FILE_NAME_METADATA_KEY = "x-amz-meta-gridcapa_file_name";
-    public static final String DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY = "x-amz-meta-gridcapa_file_validity_interval";
-    public static final String DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY = "x-amz-meta-gridcapa_file_target_process";
-    public static final String DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY = "x-amz-meta-gridcapa_file_type";
-    public static final String DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY = "x-amz-meta-gridcapa_file_group";
+    public static final String DEFAULT_GRIDCAPA_FILE_NAME_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_name";
+    public static final String DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_validity_interval";
+    public static final String DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_target_process";
+    public static final String DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_type";
+    public static final String DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_group";
 
     public static final String DEFAULT_GRIDCAPA_ARTIFACT_GROUP_METADATA_VALUE = "artifact";
     public static final String DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE = "input";
