@@ -184,6 +184,46 @@ public class MinioAdapter {
         }
     }
 
+    public Map<String, String> getFileMetadata(String filePath) {
+        String defaultBucket = properties.getBucket();
+        String defaultBasePath = properties.getBasePath();
+        String pathDestination = defaultBasePath + "/" + filePath;
+        try {
+            return minioClient.listObjects(ListObjectsArgs.builder()
+                            .bucket(defaultBucket)
+                            .prefix(pathDestination)
+                            .includeUserMetadata(true)
+                            .build()
+            ).iterator().next().get().userMetadata();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(String.format("Exception occurred while getting metadata of file %s from minio server", filePath), e);
+        }
+    }
+
+    public void addMetadataToFile(String filePath, GridcapaFileGroup fileGroup,
+                                  @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
+        InputStream fileContent = getFile(filePath);
+        Map<String, String> fileMetadata = new TreeMap<>(getFileMetadata(filePath));
+        appendMetadata(fileMetadata, fileGroup, targetProcess, type, validityInterval);
+        uploadFileWithMetadata(filePath, fileContent, fileMetadata);
+    }
+
+    private void appendMetadata(Map<String, String> currentMetadata, GridcapaFileGroup fileGroup, String targetProcess, String type, String validityInterval) {
+        if (fileGroup != null) {
+            currentMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY, fileGroup.getMetadataValue());
+        }
+        if (targetProcess != null) {
+            currentMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY, targetProcess);
+        }
+        if (type != null) {
+            currentMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY, type);
+        }
+        if (validityInterval != null) {
+            currentMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval);
+        }
+    }
+
     private List<DeleteObject> buildDeleteObjects(List<String> filePathList) {
         String defaultBasePath = properties.getBasePath();
         return filePathList.stream()
@@ -214,6 +254,10 @@ public class MinioAdapter {
     }
 
     private void uploadFileInGroup(String path, InputStream inputStream, GridcapaFileGroup fileGroup, @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
+        uploadFileWithMetadata(path, inputStream, buildMetadataMap(path, fileGroup, targetProcess, type, validityInterval));
+    }
+
+    private void uploadFileWithMetadata(String path, InputStream inputStream, Map<String, String> metadata) {
         String defaultBucket = properties.getBucket();
         String defaultBasePath = properties.getBasePath();
         String pathDestination = defaultBasePath + "/" + path;
@@ -223,7 +267,7 @@ public class MinioAdapter {
                     PutObjectArgs.builder()
                             .bucket(defaultBucket)
                             .object(pathDestination)
-                            .userMetadata(buildMetadataMap(path, fileGroup, targetProcess, type, validityInterval))
+                            .userMetadata(metadata)
                             .stream(inputStream, FILE_OBJECT_SIZE_UNKNOWN, FILE_PART_SIZE_IN_BYTES)
                             .build()
             );
@@ -233,21 +277,11 @@ public class MinioAdapter {
         }
     }
 
-    private Map<String, String> buildMetadataMap(String path, GridcapaFileGroup fileGroupEnum, @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
+    private Map<String, String> buildMetadataMap(String path, @Nullable GridcapaFileGroup fileGroupEnum, @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
         String fileName = Paths.get(path).getFileName().toString();
-        String fileGroup = fileGroupEnum.getMetadataValue();
         Map<String, String> userMetadata = new TreeMap<>();
         userMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_NAME_METADATA_KEY, fileName);
-        userMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY, fileGroup);
-        if (targetProcess != null) {
-            userMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY, targetProcess);
-        }
-        if (type != null) {
-            userMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY, type);
-        }
-        if (validityInterval != null) {
-            userMetadata.put(MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY, validityInterval);
-        }
+        appendMetadata(userMetadata, fileGroupEnum, targetProcess, type, validityInterval);
         return userMetadata;
     }
 
