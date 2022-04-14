@@ -14,11 +14,6 @@ public final class MinioAdapterConstants {
         throw new AssertionError("Utility class should not be instantiated");
     }
 
-    public static final String DEFAULT_ARTIFACT_GROUP_METADATA_VALUE = "artifact";
-    public static final String DEFAULT_INPUT_GROUP_METADATA_VALUE = "input";
-    public static final String DEFAULT_OUTPUT_GROUP_METADATA_VALUE = "output";
-    public static final String DEFAULT_EXTENDED_OUTPUT_GROUP_METADATA_VALUE = "extended_output";
-
     public static final int DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS = 7;
     public static final String DEFAULT_BASE_PATH = "/";
 
