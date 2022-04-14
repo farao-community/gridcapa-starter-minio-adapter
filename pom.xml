@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>gridacapa-starter-minio-adapter</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <name>GridCapa starter for MinIO adapter</name>
     <description>Spring boot starter providing beans for MinIO interface in GridCapa</description>
 
