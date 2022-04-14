@@ -147,7 +147,8 @@ class MinioAdapterTest {
         String filePath = "sub/path/testFile";
         String fileContent = "testFileContent";
 
-        Mockito.when(minioClient.getObject(Mockito.argThat(assertGetObjectArgs(filePath)))).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
+        Mockito.when(minioClient.getObject(Mockito.argThat(assertGetObjectArgs(filePath))))
+                .thenReturn(new GetObjectResponse(null, null, null, null, new ByteArrayInputStream(fileContent.getBytes())));
 
         InputStream fileInputStream = minioAdapter.getFile(filePath);
         assertEquals(new String(fileInputStream.readAllBytes()), fileContent);
@@ -207,7 +208,7 @@ class MinioAdapterTest {
         String filePath = "existingFile";
 
         Mockito.when(minioClient.statObject(Mockito.argThat(assertStatObjectArgs(filePath))))
-                .thenReturn(Mockito.mock(ObjectStat.class));
+                .thenReturn(Mockito.mock(StatObjectResponse.class));
 
         assertTrue(minioAdapter.fileExists(filePath));
 
