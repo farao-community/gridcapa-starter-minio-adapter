@@ -430,15 +430,13 @@ class MinioAdapterTest {
     }
 
     private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath) {
-        return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
-                getPresignedObjectUrlArgs.object().equals(BASE_PATH + "/" + filePath) &&
-                getPresignedObjectUrlArgs.expiry() == DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS;
+        return assertGetPresignedObjectUrlArgs(filePath, DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS);
     }
 
     private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath, int expiry) {
         return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
                 getPresignedObjectUrlArgs.object().equals(BASE_PATH + "/" + filePath) &&
-                getPresignedObjectUrlArgs.expiry() == expiry;
+                getPresignedObjectUrlArgs.expiry() == expiry * 24 * 60 * 60;
     }
 
     private ArgumentMatcher<PutObjectArgs> assertPutObjectArgs(
