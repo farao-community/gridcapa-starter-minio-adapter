@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.InputStream;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,12 @@ public class MinioAdapter {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.ARTIFACT);
     }
 
+    public void uploadArtifactForTimestamp(String path, InputStream inputStream,
+                               @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
+        String validityInterval = generateHourlyValidityInterval(timestamp);
+        uploadFileInGroup(path, inputStream, GridcapaFileGroup.ARTIFACT, targetProcess, type, validityInterval);
+    }
+
     public void uploadArtifact(String path, InputStream inputStream,
                                @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.ARTIFACT, targetProcess, type, validityInterval);
@@ -58,6 +65,12 @@ public class MinioAdapter {
 
     public void uploadInput(String path, InputStream inputStream) {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.INPUT);
+    }
+
+    public void uploadInputForTimestamp(String path, InputStream inputStream,
+                            @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
+        String validityInterval = generateHourlyValidityInterval(timestamp);
+        uploadFileInGroup(path, inputStream, GridcapaFileGroup.INPUT, targetProcess, type, validityInterval);
     }
 
     public void uploadInput(String path, InputStream inputStream,
@@ -69,6 +82,12 @@ public class MinioAdapter {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.OUTPUT);
     }
 
+    public void uploadOutputForTimestamp(String path, InputStream inputStream,
+                             @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
+        String validityInterval = generateHourlyValidityInterval(timestamp);
+        uploadFileInGroup(path, inputStream, GridcapaFileGroup.OUTPUT, targetProcess, type, validityInterval);
+    }
+
     public void uploadOutput(String path, InputStream inputStream,
                              @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.OUTPUT, targetProcess, type, validityInterval);
@@ -76,6 +95,12 @@ public class MinioAdapter {
 
     public void uploadExtendedOutput(String path, InputStream inputStream) {
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.EXTENDED_OUTPUT);
+    }
+
+    public void uploadExtendedOutputForTimestamp(String path, InputStream inputStream,
+                                     @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
+        String validityInterval = generateHourlyValidityInterval(timestamp);
+        uploadFileInGroup(path, inputStream, GridcapaFileGroup.EXTENDED_OUTPUT, targetProcess, type, validityInterval);
     }
 
     public void uploadExtendedOutput(String path, InputStream inputStream,
@@ -208,6 +233,10 @@ public class MinioAdapter {
         Map<String, String> fileMetadata = new TreeMap<>(getFileMetadata(filePath));
         appendMetadata(fileMetadata, fileGroup, targetProcess, type, validityInterval);
         uploadFileWithMetadata(filePath, fileContent, fileMetadata);
+    }
+
+    private String generateHourlyValidityInterval(OffsetDateTime timestamp) {
+        return timestamp != null ? timestamp + "/" + timestamp.plusHours(1L) : null;
     }
 
     private void appendMetadata(Map<String, String> currentMetadata, GridcapaFileGroup fileGroup, String targetProcess, String type, String validityInterval) {
