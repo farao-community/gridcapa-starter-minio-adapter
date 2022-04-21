@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -57,6 +59,16 @@ class MinioAdapterTest {
         String fileType = "file-type";
         String validityInterval = "2022-01-01T00:00Z/2022-01-02T00:00Z";
         checkFileUploadsCorrectly(GridcapaFileGroup.ARTIFACT, uploadedArtifactPath, uploadedArtifactContent, targetProcess, fileType, validityInterval, true);
+    }
+
+    @Test
+    void checkThatAdapterUploadsArtifactCorrectlyWhenAllMetadataSetWithTimestamp() throws Exception {
+        String uploadedArtifactPath = "testArtifact";
+        String uploadedArtifactContent = "testArtifactContent";
+        String targetProcess = "target-process";
+        String fileType = "file-type";
+        OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        checkFileUploadsForTimestampCorrectly(GridcapaFileGroup.ARTIFACT, uploadedArtifactPath, uploadedArtifactContent, targetProcess, fileType, timestamp, true);
     }
 
     @Test
@@ -104,6 +116,16 @@ class MinioAdapterTest {
     }
 
     @Test
+    void checkThatAdapterUploadsInputCorrectlyWhenAllMetadataSetForTimestamp() throws Exception {
+        String uploadedInputPath = "testInput";
+        String uploadedInputContent = "testInputContent";
+        String targetProcess = "target-process";
+        String fileType = "file-type";
+        OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        checkFileUploadsForTimestampCorrectly(GridcapaFileGroup.INPUT, uploadedInputPath, uploadedInputContent, targetProcess, fileType, timestamp, true);
+    }
+
+    @Test
     void checkThatAdapterUploadsOutputCorrectly() throws Exception {
         String uploadedOutputPath = "testOutput";
         String uploadedOutputContent = "testOutputContent";
@@ -121,6 +143,16 @@ class MinioAdapterTest {
     }
 
     @Test
+    void checkThatAdapterUploadsOutputCorrectlyWhenAllMetadataSetWithTimestamp() throws Exception {
+        String uploadedOutputPath = "testOutput";
+        String uploadedOutputContent = "testOutputContent";
+        String targetProcess = "target-process";
+        String fileType = "file-type";
+        OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        checkFileUploadsForTimestampCorrectly(GridcapaFileGroup.OUTPUT, uploadedOutputPath, uploadedOutputContent, targetProcess, fileType, timestamp, true);
+    }
+
+    @Test
     void checkThatAdapterUploadsExtendedOutputCorrectly() throws Exception {
         String uploadedExtendedOutputPath = "testExtendedOutput";
         String uploadedExtendedOutputContent = "testExtendedOutputContent";
@@ -135,6 +167,16 @@ class MinioAdapterTest {
         String fileType = "file-type";
         String validityInterval = "2022-01-01T00:00Z/2022-01-02T00:00Z";
         checkFileUploadsCorrectly(GridcapaFileGroup.EXTENDED_OUTPUT, uploadedExtendedOutputPath, uploadedExtendedOutputContent, targetProcess, fileType, validityInterval, false);
+    }
+
+    @Test
+    void checkThatAdapterUploadsExtendedOutputCorrectlyWhenAllMetadataSetWithTimestamp() throws Exception {
+        String uploadedExtendedOutputPath = "testExtendedOutput";
+        String uploadedExtendedOutputContent = "testExtendedOutputContent";
+        String targetProcess = "target-process";
+        String fileType = "file-type";
+        OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+        checkFileUploadsForTimestampCorrectly(GridcapaFileGroup.EXTENDED_OUTPUT, uploadedExtendedOutputPath, uploadedExtendedOutputContent, targetProcess, fileType, timestamp, false);
     }
 
     @Test
@@ -366,6 +408,49 @@ class MinioAdapterTest {
         inOrder.verify(minioClient, Mockito.times(1))
                 .putObject(Mockito.argThat(
                         assertPutObjectArgs(fileGroup, filePath, fileContent, targetProcess, fileType, validityInterval)
+                ));
+    }
+
+    private void checkFileUploadsForTimestampCorrectly(GridcapaFileGroup fileGroup, String filePath, String fileContent, String targetProcess, String fileType, OffsetDateTime timestamp, boolean bucketAlreadyExists) throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+        Mockito.when(minioClient.bucketExists(Mockito.argThat(assertBucketExistsArgs()))).thenReturn(bucketAlreadyExists);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
+        switch (fileGroup) {
+            case ARTIFACT:
+                minioAdapter.uploadArtifactForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+                break;
+            case INPUT:
+                minioAdapter.uploadInputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+                break;
+            case OUTPUT:
+                minioAdapter.uploadOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+                break;
+            case EXTENDED_OUTPUT:
+                minioAdapter.uploadExtendedOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+                break;
+            default:
+                throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
+        }
+
+        InOrder inOrder = Mockito.inOrder(minioClient);
+
+        inOrder.verify(minioClient, Mockito.times(1))
+                .bucketExists(Mockito.argThat(
+                        assertBucketExistsArgs()
+                ));
+        if (!bucketAlreadyExists) {
+            inOrder.verify(minioClient, Mockito.times(1))
+                    .makeBucket(Mockito.argThat(
+                            assertMakeBucketArgs()
+                    ));
+        }
+        inOrder.verify(minioClient, Mockito.times(1))
+                .putObject(Mockito.argThat(
+                        assertPutObjectArgs(fileGroup, filePath, fileContent, targetProcess, fileType, timestamp + "/" + timestamp.plusHours(1L))
                 ));
     }
 
