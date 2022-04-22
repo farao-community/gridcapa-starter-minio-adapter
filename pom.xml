@@ -16,9 +16,9 @@
     <description>Spring boot starter providing beans for MinIO interface in GridCapa</description>
 
     <scm>
-        <connection>scm:git:https://github.com/farao-community/gridcapa-rao-runner.git</connection>
-        <developerConnection>scm:git:https://github.com/farao-community/gridcapa-rao-runner.git</developerConnection>
-        <url>https://github.com/farao-community/gridcapa-rao-runner.git</url>
+        <connection>scm:git:https://github.com/farao-community/gridcapa-starter-minio-adapter.git</connection>
+        <developerConnection>scm:git:https://github.com/farao-community/gridcapa-starter-minio-adapter.git</developerConnection>
+        <url>https://github.com/farao-community/gridcapa-starter-minio-adapter.git</url>
     </scm>
 
     <developers>
