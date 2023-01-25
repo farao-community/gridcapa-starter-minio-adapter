@@ -186,6 +186,26 @@ public class MinioAdapter {
         }
     }
 
+    public String generatePreSignedUrlFromFullMinioPath(String filePath) {
+        return generatePreSignedUrlFromFullMinioPath(filePath, MinioAdapterConstants.DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS);
+    }
+
+    public String generatePreSignedUrlFromFullMinioPath(String filePath, int expiryInDays) {
+        try {
+            return minioClient.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .bucket(properties.getBucket())
+                            .object(filePath)
+                            .expiry(expiryInDays, TimeUnit.DAYS)
+                            .method(Method.GET)
+                            .build()
+            );
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(String.format("Exception occurred while getting pre-signed URL for file: %s, from minio server", filePath), e);
+        }
+    }
+
     public void deleteFile(String filePath) {
         deleteFiles(Collections.singletonList(filePath));
     }
