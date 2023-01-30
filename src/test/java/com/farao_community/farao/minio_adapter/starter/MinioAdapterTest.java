@@ -322,6 +322,27 @@ class MinioAdapterTest {
     }
 
     @Test
+    void checkThatPresignedUrlFromFullFilenameIsGeneratedCorrectlyWithGivenExpiry() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filePath = "file";
+        int expiryInDays = 2;
+
+        Mockito.when(minioClient.getPresignedObjectUrl(Mockito.argThat(assertGetPresignedObjectUrlFromFullFilenameArgs(filePath, expiryInDays))))
+                .thenReturn("url");
+
+        assertEquals("url", minioAdapter.generatePreSignedUrlFromFullMinioPath(filePath, expiryInDays));
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .getPresignedObjectUrl(Mockito.argThat(
+                        assertGetPresignedObjectUrlFromFullFilenameArgs(filePath, expiryInDays)
+                ));
+    }
+
+    @Test
     void checkThatMinioAdapterDeleteFileCorrectly() {
         MinioClient minioClient = Mockito.mock(MinioClient.class);
 
@@ -521,6 +542,16 @@ class MinioAdapterTest {
     private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlArgs(String filePath, int expiry) {
         return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
                 getPresignedObjectUrlArgs.object().equals(BASE_PATH + "/" + filePath) &&
+                getPresignedObjectUrlArgs.expiry() == expiry * 24 * 60 * 60;
+    }
+
+    private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlFromFullFilenameArgs(String filePath) {
+        return assertGetPresignedObjectUrlFromFullFilenameArgs(filePath, DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS);
+    }
+
+    private ArgumentMatcher<GetPresignedObjectUrlArgs> assertGetPresignedObjectUrlFromFullFilenameArgs(String filePath, int expiry) {
+        return getPresignedObjectUrlArgs -> getPresignedObjectUrlArgs.bucket().equals(BUCKET_NAME) &&
+                getPresignedObjectUrlArgs.object().equals(filePath) &&
                 getPresignedObjectUrlArgs.expiry() == expiry * 24 * 60 * 60;
     }
 
