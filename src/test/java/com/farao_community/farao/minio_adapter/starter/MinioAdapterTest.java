@@ -202,7 +202,7 @@ class MinioAdapterTest {
     }
 
     @Test
-    void checkThatAdapterGetFileCorrectly1() throws Exception {
+    void checkThatAdapterGetFileCorrectlyFromFullPath() throws Exception {
         MinioClient minioClient = Mockito.mock(MinioClient.class);
 
         MinioAdapterProperties properties = buildTestProperties();
