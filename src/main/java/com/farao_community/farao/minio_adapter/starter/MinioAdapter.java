@@ -125,6 +125,21 @@ public class MinioAdapter {
         }
     }
 
+    public InputStream getFileFromFullPath(String path) {
+        String defaultBucket = properties.getBucket();
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(path)
+                            .build()
+            );
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(), e);
+            throw new RuntimeException(String.format("Exception occurred while downloading file: %s, from minio server", path), e);
+        }
+    }
+
     public List<String> listFiles(String prefix) {
         String defaultBucket = properties.getBucket();
         String defaultBasePath = properties.getBasePath();

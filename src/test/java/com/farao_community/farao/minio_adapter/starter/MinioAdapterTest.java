@@ -202,6 +202,28 @@ class MinioAdapterTest {
     }
 
     @Test
+    void checkThatAdapterGetFileCorrectlyFromFullPath() throws Exception {
+        MinioClient minioClient = Mockito.mock(MinioClient.class);
+
+        MinioAdapterProperties properties = buildTestProperties();
+        MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        String filefullPath = "base/path/for/tests/sub/path/testFile";
+        String fileContent = "testFileContent";
+
+        Mockito.when(minioClient.getObject(Mockito.argThat(assertGetObjectArgsFromFullPath(filefullPath))))
+                .thenReturn(new GetObjectResponse(null, null, null, null, new ByteArrayInputStream(fileContent.getBytes())));
+
+        InputStream fileInputStream = minioAdapter.getFileFromFullPath(filefullPath);
+        assertEquals(new String(fileInputStream.readAllBytes()), fileContent);
+
+        Mockito.verify(minioClient, Mockito.times(1))
+                .getObject(Mockito.argThat(
+                        assertGetObjectArgsFromFullPath(filefullPath)
+                ));
+    }
+
+    @Test
     void checkThatAdapterListsFilesCorrectlyWhenDirectoryEmpty() {
         MinioClient minioClient = Mockito.mock(MinioClient.class);
 
@@ -589,6 +611,12 @@ class MinioAdapterTest {
         return getObjectArgs ->
                 getObjectArgs.bucket().equals(BUCKET_NAME) &&
                 getObjectArgs.object().equals(BASE_PATH + "/" + filePath);
+    }
+
+    private ArgumentMatcher<GetObjectArgs> assertGetObjectArgsFromFullPath(String filePath) {
+        return getObjectArgs ->
+                getObjectArgs.bucket().equals(BUCKET_NAME) &&
+                        getObjectArgs.object().equals(filePath);
     }
 
     private ArgumentMatcher<ListObjectsArgs> assertListObjectsArgs(String prefix) {
