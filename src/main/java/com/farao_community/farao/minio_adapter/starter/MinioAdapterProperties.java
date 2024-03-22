@@ -7,12 +7,10 @@
 package com.farao_community.farao.minio_adapter.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
  */
-@ConstructorBinding
 @ConfigurationProperties("minio-adapter")
 public class MinioAdapterProperties {
     /**
