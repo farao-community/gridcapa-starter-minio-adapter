@@ -7,7 +7,7 @@
     <parent>
         <artifactId>farao-parent-ws</artifactId>
         <groupId>com.farao-community.farao</groupId>
-        <version>1.5.0</version>
+        <version>1.8.0</version>
     </parent>
 
     <artifactId>gridcapa-starter-minio-adapter</artifactId>
@@ -17,7 +17,8 @@
 
     <scm>
         <connection>scm:git:https://github.com/farao-community/gridcapa-starter-minio-adapter.git</connection>
-        <developerConnection>scm:git:https://github.com/farao-community/gridcapa-starter-minio-adapter.git</developerConnection>
+        <developerConnection>scm:git:https://github.com/farao-community/gridcapa-starter-minio-adapter.git
+        </developerConnection>
         <url>https://github.com/farao-community/gridcapa-starter-minio-adapter.git</url>
     </scm>
 
@@ -36,7 +37,6 @@
             <url>https://www.mozilla.org/en-US/MPL/2.0/</url>
         </license>
     </licenses>
-
     <dependencies>
         <!-- Compile dependencies -->
         <dependency>
