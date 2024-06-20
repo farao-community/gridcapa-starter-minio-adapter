@@ -29,6 +29,7 @@ public final class MinioAdapterConstants {
     public static final String DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_target_process";
     public static final String DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_type";
     public static final String DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY = "X-Amz-Meta-Gridcapa_file_group";
+    public static final String DEFAULT_GRIDCAPA_DOCUMENT_ID_METADATA_KEY = "X-Amz-Meta-Gridcapa_document_id";
 
     public static final String DEFAULT_GRIDCAPA_ARTIFACT_GROUP_METADATA_VALUE = "artifact";
     public static final String DEFAULT_GRIDCAPA_INPUT_GROUP_METADATA_VALUE = "input";

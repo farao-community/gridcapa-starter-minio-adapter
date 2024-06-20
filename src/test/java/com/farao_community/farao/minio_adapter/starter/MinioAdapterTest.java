@@ -22,7 +22,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -402,7 +401,7 @@ class MinioAdapterTest {
         return directoryContent.stream()
                 .map(this::generateFakeItemForContent)
                 .map(Result::new)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
     }
 
     private Item generateFakeItemForContent(String content) {
@@ -420,20 +419,14 @@ class MinioAdapterTest {
 
         InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
         switch (fileGroup) {
-            case ARTIFACT:
-                minioAdapter.uploadArtifact(filePath, inputStream, targetProcess, fileType, validityInterval);
-                break;
-            case INPUT:
-                minioAdapter.uploadInput(filePath, inputStream, targetProcess, fileType, validityInterval);
-                break;
-            case OUTPUT:
-                minioAdapter.uploadOutput(filePath, inputStream, targetProcess, fileType, validityInterval);
-                break;
-            case EXTENDED_OUTPUT:
-                minioAdapter.uploadExtendedOutput(filePath, inputStream, targetProcess, fileType, validityInterval);
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
+            case ARTIFACT ->
+                    minioAdapter.uploadArtifact(filePath, inputStream, targetProcess, fileType, validityInterval);
+            case INPUT -> minioAdapter.uploadInput(filePath, inputStream, targetProcess, fileType, validityInterval);
+            case OUTPUT -> minioAdapter.uploadOutput(filePath, inputStream, targetProcess, fileType, validityInterval);
+            case EXTENDED_OUTPUT ->
+                    minioAdapter.uploadExtendedOutput(filePath, inputStream, targetProcess, fileType, validityInterval);
+            default ->
+                    throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
         }
 
         InOrder inOrder = Mockito.inOrder(minioClient);
@@ -463,20 +456,16 @@ class MinioAdapterTest {
 
         InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
         switch (fileGroup) {
-            case ARTIFACT:
-                minioAdapter.uploadArtifactForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
-                break;
-            case INPUT:
-                minioAdapter.uploadInputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
-                break;
-            case OUTPUT:
-                minioAdapter.uploadOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
-                break;
-            case EXTENDED_OUTPUT:
-                minioAdapter.uploadExtendedOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
+            case ARTIFACT ->
+                    minioAdapter.uploadArtifactForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+            case INPUT ->
+                    minioAdapter.uploadInputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+            case OUTPUT ->
+                    minioAdapter.uploadOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+            case EXTENDED_OUTPUT ->
+                    minioAdapter.uploadExtendedOutputForTimestamp(filePath, inputStream, targetProcess, fileType, timestamp);
+            default ->
+                    throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
         }
 
         InOrder inOrder = Mockito.inOrder(minioClient);
@@ -506,20 +495,12 @@ class MinioAdapterTest {
 
         InputStream inputStream = new ByteArrayInputStream(fileContent.getBytes());
         switch (fileGroup) {
-            case ARTIFACT:
-                minioAdapter.uploadArtifact(filePath, inputStream);
-                break;
-            case INPUT:
-                minioAdapter.uploadInput(filePath, inputStream);
-                break;
-            case OUTPUT:
-                minioAdapter.uploadOutput(filePath, inputStream);
-                break;
-            case EXTENDED_OUTPUT:
-                minioAdapter.uploadExtendedOutput(filePath, inputStream);
-                break;
-            default:
-                throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
+            case ARTIFACT -> minioAdapter.uploadArtifact(filePath, inputStream);
+            case INPUT -> minioAdapter.uploadInput(filePath, inputStream);
+            case OUTPUT -> minioAdapter.uploadOutput(filePath, inputStream);
+            case EXTENDED_OUTPUT -> minioAdapter.uploadExtendedOutput(filePath, inputStream);
+            default ->
+                    throw new UnsupportedOperationException(String.format("File group %s not supported yet", fileGroup));
         }
 
         InOrder inOrder = Mockito.inOrder(minioClient);
