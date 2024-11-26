@@ -30,10 +30,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Broadcast update event
-        if: github.ref == 'refs/heads/master'
-        uses: farao-community/broadcast-event@master
-        with:
-          token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          event-type: gridcapa_starter_minio_adapter_updated
