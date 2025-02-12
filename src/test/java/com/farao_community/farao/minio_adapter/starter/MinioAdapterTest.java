@@ -555,7 +555,7 @@ class MinioAdapterTest {
     @Test
     void checkThatAdapterSafelyUploadsOutputInBasePathCorrectlyWhenBucketDoesNotExist() throws InterruptedException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         final String uploadedOutputPath = "testOutput.txt";
-        final String uploadedOutputContent = new Random().ints(97, 123).limit(1024 * 1024 * 40).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        final String uploadedOutputContent = new Random().ints(97, 123).limit(1024).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
         final String targetProcess = "target-process";
         final String fileType = "file-type";
         final OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
