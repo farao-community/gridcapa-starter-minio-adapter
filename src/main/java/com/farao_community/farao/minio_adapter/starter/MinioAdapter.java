@@ -369,7 +369,7 @@ public class MinioAdapter {
                             .build()
             );
         } catch (Exception e) {
-            throw new RuntimeException(String.format("Exception occurred while uploading file: %s, to minio server", pathDestination), e);
+            throw new MinioUploadException(String.format("Exception occurred while uploading file: %s, to minio server", pathDestination), e);
         }
     }
 
