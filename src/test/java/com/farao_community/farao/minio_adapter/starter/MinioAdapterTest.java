@@ -6,8 +6,26 @@
  */
 package com.farao_community.farao.minio_adapter.starter;
 
-import io.minio.*;
+import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.ListObjectsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import io.minio.PutObjectArgs;
+import io.minio.RemoveObjectsArgs;
+import io.minio.Result;
+import io.minio.StatObjectArgs;
+import io.minio.StatObjectResponse;
+import io.minio.errors.ErrorResponseException;
+import io.minio.errors.InsufficientDataException;
+import io.minio.errors.InternalException;
+import io.minio.errors.InvalidResponseException;
+import io.minio.errors.ServerException;
+import io.minio.errors.XmlParserException;
 import io.minio.messages.Item;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.InOrder;
@@ -18,13 +36,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_GROUP_METADATA_KEY;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_NAME_METADATA_KEY;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TARGET_PROCESS_METADATA_KEY;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_TYPE_METADATA_KEY;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_GRIDCAPA_FILE_VALIDITY_INTERVAL_METADATA_KEY;
+import static com.farao_community.farao.minio_adapter.starter.MinioAdapterConstants.DEFAULT_PRE_SIGNED_URL_EXPIRY_IN_DAYS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Sebastien Murgey {@literal <sebastien.murgey at rte-france.com>}
@@ -519,6 +550,54 @@ class MinioAdapterTest {
                 .putObject(Mockito.argThat(
                         assertPutObjectArgs(fileGroup, filePath, fileContent)
                 ));
+    }
+
+    @Test
+    void checkThatAdapterSafelyUploadsOutputInBasePathCorrectlyWhenBucketDoesNotExist() throws InterruptedException, ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        final String uploadedOutputPath = "testOutput.txt";
+        final String uploadedOutputContent = new Random().ints(97, 123).limit(1024).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+        final String targetProcess = "target-process";
+        final String fileType = "file-type";
+        final OffsetDateTime timestamp = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+
+        final MinioClient minioClient = Mockito.mock(MinioClient.class);
+        Mockito.when(minioClient.putObject(Mockito.argThat(assertPutObjectArgs(uploadedOutputPath))))
+                .thenReturn(null) // First call creates the file
+                .thenThrow(new RuntimeException()); // Next calls are rejected because a file with the same name already exists
+
+        MinioAdapterProperties properties = buildTestProperties();
+        final MinioAdapter minioAdapter = new MinioAdapter(properties, minioClient);
+
+        InputStream inputStream = new ByteArrayInputStream(uploadedOutputContent.getBytes());
+
+        final AtomicBoolean t1Successful = new AtomicBoolean(false);
+        final AtomicBoolean t2Successful = new AtomicBoolean(false);
+        Thread t1 = new Thread(() -> t1Successful.set(uploadFileToMinio("T1", minioAdapter, uploadedOutputPath, inputStream, targetProcess, fileType, timestamp)));
+        Thread t2 = new Thread(() -> t2Successful.set(uploadFileToMinio("T2", minioAdapter, uploadedOutputPath, inputStream, targetProcess, fileType, timestamp)));
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        Assertions.assertThat(t1Successful.get()).isNotEqualTo(t2Successful.get()); // One thread creates the file successfully and the second fails
+    }
+
+    private static boolean uploadFileToMinio(final String threadName, final MinioAdapter minioAdapter, final String uploadedOutputPath, final InputStream inputStream, final String targetProcess, final String fileType, final OffsetDateTime timestamp) {
+        try {
+            System.out.println(threadName + " start: " + LocalDateTime.now());
+            minioAdapter.safelyUploadOutputForTimestamp(uploadedOutputPath, inputStream, targetProcess, fileType, timestamp);
+            System.out.println(threadName + " end: " + LocalDateTime.now());
+            return true;
+        } catch (Exception e) {
+            System.out.println(threadName + " failed at " + LocalDateTime.now() + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    private static ArgumentMatcher<PutObjectArgs> assertPutObjectArgs(final String uploadedOutputPath) {
+        return putObjectArgs ->
+                putObjectArgs.headers().containsEntry("If-None-Match", "*") && putObjectArgs.object().endsWith(uploadedOutputPath);
     }
 
     private ArgumentMatcher<BucketExistsArgs> assertBucketExistsArgs() {

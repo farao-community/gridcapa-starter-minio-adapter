@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.Collections;
@@ -86,6 +87,12 @@ public class MinioAdapter {
                              @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
         String validityInterval = generateHourlyValidityInterval(timestamp);
         uploadFileInGroup(path, inputStream, GridcapaFileGroup.OUTPUT, targetProcess, type, validityInterval);
+    }
+
+    public void safelyUploadOutputForTimestamp(String path, InputStream inputStream,
+                             @Nullable String targetProcess, @Nullable String type, OffsetDateTime timestamp) {
+        String validityInterval = generateHourlyValidityInterval(timestamp);
+        safelyUploadFileInGroup(path, inputStream, GridcapaFileGroup.OUTPUT, targetProcess, type, validityInterval);
     }
 
     public void uploadOutput(String path, InputStream inputStream,
@@ -322,6 +329,10 @@ public class MinioAdapter {
         uploadFileWithMetadata(path, inputStream, buildMetadataMap(path, fileGroup, targetProcess, type, validityInterval));
     }
 
+    private void safelyUploadFileInGroup(String path, InputStream inputStream, GridcapaFileGroup fileGroup, @Nullable String targetProcess, @Nullable String type, @Nullable String validityInterval) {
+        safelyUploadFileWithMetadata(path, inputStream, buildMetadataMap(path, fileGroup, targetProcess, type, validityInterval));
+    }
+
     private void uploadFileWithMetadata(String path, InputStream inputStream, Map<String, String> metadata) {
         String defaultBucket = properties.getBucket();
         String defaultBasePath = properties.getBasePath();
@@ -339,6 +350,26 @@ public class MinioAdapter {
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             throw new RuntimeException(String.format("Exception occurred while uploading file: %s, to minio server", pathDestination), e);
+        }
+    }
+
+    private void safelyUploadFileWithMetadata(String path, InputStream inputStream, Map<String, String> metadata) {
+        String defaultBucket = properties.getBucket();
+        String defaultBasePath = properties.getBasePath();
+        String pathDestination = Path.of(defaultBasePath, path).toString();
+        try {
+            createBucketIfDoesNotExist();
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(defaultBucket)
+                            .object(pathDestination)
+                            .headers(Map.of("If-None-Match", "*"))
+                            .userMetadata(metadata)
+                            .stream(inputStream, FILE_OBJECT_SIZE_UNKNOWN, FILE_PART_SIZE_IN_BYTES)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new MinioUploadException(String.format("Exception occurred while uploading file: %s, to minio server", pathDestination), e);
         }
     }
 
